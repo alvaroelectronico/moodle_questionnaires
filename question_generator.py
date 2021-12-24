@@ -6,36 +6,66 @@ from unicodedata import category
 from xml.etree import ElementTree
 from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, Comment
-
 from jinja2.nodes import Sub
 from sympy.printing.pretty.stringpict import prettyForm
 from torch.utils.collect_env import check_release_file
+import os
+import shutil
 
+def create_xml_from_question_data(file, category, questions_data):
+    """
+    This is the public functions which uses internal ones
+    :param file: file name (without extension, this will be added)
+    :param category: category name
+    :param questions_data: all info for the questions.
+    :return: none, it just creates an xml file for Moodle.
+    """
+    elem = create_xml_elem_(category, questions_data)
+    prettify_(elem)
+    save_to_file_(elem, file + ".xml")
 
-def prettify(elem):
+def prettify_(elem):
     """
     :param elem: Element previously generated with ElementTree
     :return: pretty-printed XML string for the Element.
     """
-    #rough_string = ElementTree.tostring(elem, encoding='unicode')
-    rough_string = ElementTree.tostring(elem, encoding='utf-8') #Python2
+    rough_string = ElementTree.tostring(elem, encoding='utf-8')
     reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
+    reparsed_pretty = reparsed.toprettyxml(indent="  ", encoding="utf-8")
+    return reparsed_pretty
 
+def fix_html_tags_(file):
+    # Opening the file to be fixed
+    fin = open(file, "rt", encoding='UTF-8')
+    # output file to write the result to
+    fout = open("temp.xml", "wt", encoding='UTF-8')
+    # for each line in the input file
+    for line in fin:
+        fout.write(line.replace('&lt;', '<').replace('&gt;', '>'))
+    # close input and output files
+    fin.close()
+    fout.close()
+    shutil.copyfile("temp.xml", file)
+    os.remove("temp.xml")
 
-def save_to_file(elem, file_name="output_xml"):
+def save_to_file_(elem, file_name="output_xml"):
     """
     :param elem: Element previously generated with ElementTree
     :param file_name: this is the file name of the gerenated file
     :return: a file with the prettified string obtained from the element elem
     """
-    string = prettify(elem)
-    file = open(file_name, "w")
-    file.write(string)
-    file.close()
+    string = prettify_(elem)
+    # file = open(file_name, "w")
+    # file.write(string)
+    # file.close()
+    # with open(file_name, "w", encoding="utf-8") as outfile:
+    #     outfile.write(string)
+    with open(file_name, "wb") as outfile:
+        outfile.write(prettify_(elem))
+        outfile.close()
+    fix_html_tags_(file_name)
 
-
-def create_xml_elem(category_name_str, question_data):
+def create_xml_elem_(category_name_str, question_data):
     """
     This function creates an Element with information for serveral Moodle questions corresponding to a give
     category
@@ -74,7 +104,7 @@ def create_xml_elem(category_name_str, question_data):
         question_name_text.text = question_name_str
 
         # Question text: what the student has to reply to
-        question_text = SubElement(question, "questiontext", format='html')
+        question_text = SubElement(question, "questiontext", format='moodle_auto_format')
         question_text_text = SubElement(question_text, "text")
         question_text_text.text = question_text_str
 
@@ -92,20 +122,17 @@ def create_xml_elem(category_name_str, question_data):
 """
 What follows is code to check that the previous functions work fine.
 When using this module from another .py file, importing the functions would be enough.
-That other .py file should create the lists for create_xml_elem function to be run
+That other .py file should create th e lists for create_xml_elem function to be run
 """
-
-import numpy as np
-
-# Data for building the question
-no_test_questions = 10
-question_data = [["question_test_{}".format(i),
-                 "text_{}".format(i),
-                 "{}".format(100*np.random.random()),
-                 "{}".format(10*np.random.random())]
-                 for i in range(10)]
-
-# Creating the ET elment to be prettified
-quiz = create_xml_elem("test_category", question_data)
-# Prettifying and saving the pretty string to an .xml file
-save_to_file(quiz, "prueba_202122.xml")
+#
+# import numpy as np
+#
+# # Data for building the question
+# no_test_questions = 10
+# question_data = [["question_test_{}".format(i),
+#                  "<p>DATOS DEL PROBLEMA. DÍA</p><p></p><p><b>Datos de las plantas</b></p>",
+#                  "{}".format(100*np.random.random()),
+#                  "{}".format(10*np.random.random())]
+#                  for i in range(10)]
+#
+# create_xml_from_question_data("prueba_202125.xml", "test_category", question_data)
