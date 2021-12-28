@@ -12,6 +12,7 @@ from torch.utils.collect_env import check_release_file
 import os
 import shutil
 
+
 def create_xml_from_question_data(file, category, questions_data):
     """
     This is the public functions which uses internal ones
@@ -24,29 +25,32 @@ def create_xml_from_question_data(file, category, questions_data):
     prettify_(elem)
     save_to_file_(elem, file + ".xml")
 
+
 def prettify_(elem):
     """
     :param elem: Element previously generated with ElementTree
     :return: pretty-printed XML string for the Element.
     """
-    rough_string = ElementTree.tostring(elem, encoding='utf-8')
+    rough_string = ElementTree.tostring(elem, encoding="utf-8")
     reparsed = minidom.parseString(rough_string)
     reparsed_pretty = reparsed.toprettyxml(indent="  ", encoding="utf-8")
     return reparsed_pretty
 
+
 def fix_html_tags_(file):
     # Opening the file to be fixed
-    fin = open(file, "rt", encoding='UTF-8')
+    fin = open(file, "rt", encoding="UTF-8")
     # output file to write the result to
-    fout = open("temp.xml", "wt", encoding='UTF-8')
+    fout = open("temp.xml", "wt", encoding="UTF-8")
     # for each line in the input file
     for line in fin:
-        fout.write(line.replace('&lt;', '<').replace('&gt;', '>'))
+        fout.write(line.replace("&lt;", "<").replace("&gt;", ">"))
     # close input and output files
     fin.close()
     fout.close()
     shutil.copyfile("temp.xml", file)
     os.remove("temp.xml")
+
 
 def save_to_file_(elem, file_name="output_xml"):
     """
@@ -65,6 +69,7 @@ def save_to_file_(elem, file_name="output_xml"):
         outfile.close()
     fix_html_tags_(file_name)
 
+
 def create_xml_elem_(category_name_str, question_data):
     """
     This function creates an Element with information for serveral Moodle questions corresponding to a give
@@ -80,7 +85,7 @@ def create_xml_elem_(category_name_str, question_data):
     quiz = Element("quiz")
 
     # Question comment
-    comment = Comment('Generated from Python ')
+    comment = Comment("Generated from Python ")
     quiz.append(comment)
 
     # Category information
@@ -92,8 +97,12 @@ def create_xml_elem_(category_name_str, question_data):
     info_text = SubElement(info, "text")
     info_text.text = ""
 
-
-    for question_name_str, question_text_str, answer_str, tolerance_str in question_data:
+    for (
+        question_name_str,
+        question_text_str,
+        answer_str,
+        tolerance_str,
+    ) in question_data:
 
         # Type of question is numerical
         question = SubElement(quiz, "question", type="numerical")
@@ -104,12 +113,16 @@ def create_xml_elem_(category_name_str, question_data):
         question_name_text.text = question_name_str
 
         # Question text: what the student has to reply to
-        question_text = SubElement(question, "questiontext", format='moodle_auto_format')
+        question_text = SubElement(
+            question, "questiontext", format="moodle_auto_format"
+        )
         question_text_text = SubElement(question_text, "text")
         question_text_text.text = question_text_str
 
         # Correct value of the answer
-        answer = SubElement(question, "answer", fraction="100", format="moodle_auto_format")
+        answer = SubElement(
+            question, "answer", fraction="100", format="moodle_auto_format"
+        )
         answer_text = SubElement(answer, "text")
         answer_text.text = answer_str
 
@@ -119,10 +132,12 @@ def create_xml_elem_(category_name_str, question_data):
 
     return quiz
 
+
 """
 What follows is code to check that the previous functions work fine.
 When using this module from another .py file, importing the functions would be enough.
-That other .py file should create th e lists for create_xml_elem function to be run
+That other .py file should create the lists for create_xml_from_question_data which will be 
+passed on to create_xml_elem function to be run
 """
 #
 # import numpy as np
