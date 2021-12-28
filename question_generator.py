@@ -76,10 +76,11 @@ def create_xml_elem_(category_name_str, question_data):
     category
     :param category_name_str: the name of the category in Moodle the questions belong to.
     :param question_data: this a list of lists, where each list is has four elements:
-        question_data[0] is the question name which will be used to store it in Moodle
-        question_data[1] text is the question text itself
-        question_data[2] is the correct value for the question
-        question_data[3] is the tolerance for the correct value
+        question_data[0] is the type of question
+        question_data[1] is the question name which will be used to store it in Moodle
+        question_data[2] text is the question text itself
+        question_data[3] is the correct value for the question (only for numeric type questions)
+        question_data[4] is the tolerance for the correct value (only for numeric type questions)
     :return: Element type (of ElementTree).
     """
     quiz = Element("quiz")
@@ -97,38 +98,34 @@ def create_xml_elem_(category_name_str, question_data):
     info_text = SubElement(info, "text")
     info_text.text = ""
 
-    for (
-        question_name_str,
-        question_text_str,
-        answer_str,
-        tolerance_str,
-    ) in question_data:
+    for data in question_data:
 
         # Type of question is numerical
-        question = SubElement(quiz, "question", type="numerical")
+        question = SubElement(quiz, "question", type=data[0])
 
         # Question name: the name that will be seen in Moodle
         question_name = SubElement(question, "name")
         question_name_text = SubElement(question_name, "text")
-        question_name_text.text = question_name_str
+        question_name_text.text = data[1]
 
         # Question text: what the student has to reply to
         question_text = SubElement(
             question, "questiontext", format="moodle_auto_format"
         )
         question_text_text = SubElement(question_text, "text")
-        question_text_text.text = question_text_str
+        question_text_text.text = data[2]
 
-        # Correct value of the answer
-        answer = SubElement(
-            question, "answer", fraction="100", format="moodle_auto_format"
-        )
-        answer_text = SubElement(answer, "text")
-        answer_text.text = answer_str
+        if data[0] == 'numerical':
+            # Correct value of the answer
+            answer = SubElement(
+                question, "answer", fraction="100", format="moodle_auto_format"
+            )
+            answer_text = SubElement(answer, "text")
+            answer_text.text = data[3]
 
-        # Tolerance value
-        tolerance_text = SubElement(answer, "tolerance")
-        tolerance_text.text = tolerance_str
+            # Tolerance value
+            tolerance_text = SubElement(answer, "tolerance")
+            tolerance_text.text = data[4]
 
     return quiz
 
@@ -139,15 +136,22 @@ When using this module from another .py file, importing the functions would be e
 That other .py file should create the lists for create_xml_from_question_data which will be 
 passed on to create_xml_elem function to be run
 """
-#
-# import numpy as np
-#
-# # Data for building the question
-# no_test_questions = 10
-# question_data = [["question_test_{}".format(i),
-#                  "<p>DATOS DEL PROBLEMA. DÍA</p><p></p><p><b>Datos de las plantas</b></p>",
-#                  "{}".format(100*np.random.random()),
-#                  "{}".format(10*np.random.random())]
-#                  for i in range(10)]
-#
-# create_xml_from_question_data("prueba_202125.xml", "test_category", question_data)
+
+import numpy as np
+
+# Data for building the question
+no_test_questions_numeric = 1
+question_data = [["numerical",
+                  "question_numeric_{}".format(i),
+                 "<![CDATA[<p>DATOS DEL PROBLEMA. DÍA</p><p></p><p><b>Datos de las plantas</b></p>]]>",
+                 "{}".format(100*np.random.random()),
+                 "{}".format(10*np.random.random())]
+                 for i in range(no_test_questions_numeric)]
+no_test_questions_cloze = 1
+for i in range(no_test_questions_cloze):
+    question_data.append(["cloze",
+                            "question_cloze_{}".format(i),
+                     "<![CDATA[<p>DÍA</p><p></p><p><b>Datos de las plantas</b></p><p></p><p>Pregunta 1: {1:NUMERICAL:=12000} euros.</p>]]>"])
+
+create_xml_from_question_data("prueba_202128", "Pruebas Python", question_data)
+
